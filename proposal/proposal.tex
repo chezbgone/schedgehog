@@ -8,8 +8,7 @@
 \usepackage[shortlabels, inline]{enumitem}
 
 % layout
-\usepackage{geometry}
-\geometry{margin=1.5cm, includefoot}
+\usepackage[margin=1.5cm, includefoot]{geometry}
 \usepackage[nodisplayskipstretch, onehalfspacing]{setspace}
 % section numbers in margin
 \RenewDocumentCommand{\sectionlinesformat}{m m m m}{\makebox[0pt][r]{#3}#4}
@@ -37,9 +36,34 @@
 % https://hackage.haskell.org/package/hedgehog
 % https://hedgehog.qa/
 % https://www.cs.tufts.edu/~nr/cs257/archive/john-hughes/quick.pdf
+We build a QuickCheck-like tool that allows users to
+formulate properties of programs and then
+automatically runs tests based on the properties.
+Properties that users want to test will be specified
+via a DSL embedded in Scheme.
+The properties will be represented as functions
+along with typing information of the parameters,
+where the types will enable the generation of test data.
+To generate the actual test data, we choose random testing,
+with a uniform distribution over the type by default.
+This is interesting because it allows ``generator deriving'':
+we automatically have a way to generate lists of integers
+if we have a way to generate integers.
+We also allow users to specify their own distribution
+over types via generics to parallel real world data. % is this even right
+
+One potential extension to this idea is test shrinking:
+if a counterexample is found for a property,
+the library will automatically simplify
+the failure case to a minimal failing example
+via a built-in (and user-defined) rule system.
+This involves defining a generic shrinking function for each type,
+which is interesting in the case of recursive types.
+
+% TODO: distribution of work
 
 
-\section{Stack traces for scheme errors}
+\section{Stack traces for Scheme errors}
 
 
 \section{Another idea}
