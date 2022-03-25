@@ -63,7 +63,30 @@ which is interesting in the case of recursive types.
 % TODO: distribution of work
 
 
-\section{Stack traces for Scheme errors}
+\section{Better Scheme errors}
+% https://elm-lang.org/news/compilers-as-assistants
+% https://elm-lang.org/news/compiler-errors-for-humans
+
+In a language intended for command-line, interactive use, error messages are an
+essential part of development. Scheme's error messages, however, leave much to
+be desired. The messages are often cryptic, saying only the error proper,
+without giving any context for where the error appeared or indication as to how
+it can be fixed.
+
+We propose an extension for Scheme that provides better error messages. We aim
+to use Scheme's powerful introspection capabilities to include rich context for
+errors, including not just a stack trace, but row and column positions, what is
+expected and what is actually there, and hints about how to fix it, maybe even
+intended for beginners.
+
+While Scheme's debugger is already a powerful tool, it can prove intimidating
+to use for beginners. Further, we believe it is possible to write errors that
+are effective enough to allow one-shot debugging: making a single change after
+seeing the error and fixing it without further interaction.
+
+Modularity will be accomplished by factoring error message capabilities into
+several modules, which can be combined in various ways to produce errors of
+varying levels of detail.
 
 
 \section{Another idea}
