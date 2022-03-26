@@ -86,7 +86,12 @@ seeing the error and fixing it without further interaction.
 
 Modularity will be accomplished by factoring error message capabilities into
 several modules, which can be combined in various ways to produce errors of
-varying levels of detail.
+varying levels of detail. For example, one module could be responsible for the
+parsing and tagging of a source file, while another could be responsible for
+examining the stack. Thus, it would be possible to have interactive stack
+traces without having to place everything in a source file.
+
+% TODO: distribution of work
 
 
 \section{Another idea}
