@@ -37,6 +37,14 @@
 % https://www.cs.tufts.edu/~nr/cs257/archive/john-hughes/quick.pdf
 % https://hackage.haskell.org/package/hedgehog
 
+In software engineering, testing code is considered to
+be a vital part of delivering quality software.
+However, writing unit tests is extremely time consuming,
+and it is easy for the programmer to miss certain cases
+for more complicated functions.
+Therefore, it is desirable to try to automate this processes
+either partially, or entirely.
+
 We build a QuickCheck-like tool that allows users to
 formulate properties of programs and then
 automatically runs tests based on the properties.
@@ -93,7 +101,7 @@ examining the stack. Thus, it would be possible to have interactive stack
 traces without having to place everything in a source file.
 
 % TODO: distribution of work
-
+ 
 \section{Another idea}
 In chess engines, there are two main components: search and evaluation.
 It is hard to generalize evaluation to other board games,
