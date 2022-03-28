@@ -27,7 +27,7 @@
 % actual content
 
 \title{6.945 Project Proposals}
-\author{Jason Chen \and CJ Quines}
+\author{Jason Chen \and CJ Quines \and Matthew Ho}
 
 \begin{document}
 \maketitle
@@ -94,7 +94,7 @@ traces without having to place everything in a source file.
 
 % TODO: distribution of work
 
-\section{Another idea}
+\section{Board game move generation and search}
 In chess engines, there are two main components: search and evaluation.
 It is hard to generalize evaluation to other board games,
 as evaluation functions often rely on features specific to each game.
@@ -105,7 +105,7 @@ exponentially. This means that a board game engine must be able to
 generate legal moves extremely quickly in order to reach a reasonable depth,
 and must also have good ways to prune
 (for example, using alpha-beta pruning with some optimizations, and finding
-good ways to sort candidate moves so that they may be pruned more easily.)
+good ways to sort candidate moves so that they may be pruned more easily).
 
 We propose to generalize the search component of a standard chess engine
 to other board games. Board games such as chess and checkers consist of
