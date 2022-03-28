@@ -15,6 +15,7 @@
 
 % typography
 \usepackage{libertine, microtype}
+\usepackage[shortlabels, inline]{enumitem}
 
 % smaller title style
 \makeatletter \patchcmd{\@maketitle}{\huge}{\large}{}{} \makeatother
@@ -94,24 +95,44 @@ traces without having to place everything in a source file.
 % TODO: distribution of work
 
 \section{Another idea}
-% distributed computing of something
-% dependent type system/checker
-% olympiad geometry -> diagram compiler
-% natural language linting/translating
+In chess engines, there are two main components: search and evaluation.
+It is hard to generalize evaluation to other board games,
+as evaluation functions often rely on features specific to each game.
+However, search is much more generalizable.
 
-In chess engines, there are two main components: search and evaluation. It is hard to generalize evaluation to other board games, as evaluation functions often rely on features specific to each game. However, search is much more generalizable.
+As one increases search depth, the size of the search tree typically grows
+exponentially. This means that a board game engine must be able to
+generate legal moves extremely quickly in order to reach a reasonable depth,
+and must also have good ways to prune
+(for example, using alpha-beta pruning with some optimizations, and finding
+good ways to sort candidate moves so that they may be pruned more easily.)
 
-As one increases search depth, the size of the search tree typically grows exponentially. This means that a board game engine must be able to generate legal moves extremely quickly in order to reach a reasonable depth, and must also have good ways to prune (for example, using alpha-beta pruning with some optimizations, and finding good ways to sort candidate moves so that they may be pruned more easily.) 
-
-We propose to generalize the search component of a standard chess engine to other board games. Board games such as chess and checkers consist of a small number of types of pieces that have certain behaviors, such as captures and promotions. We will allow the user to specify the rules of a board game of their choice using a DSL, and create search functions that will take an evaluation function as input and return the list of moves and their corresponding evaluations.
+We propose to generalize the search component of a standard chess engine
+to other board games. Board games such as chess and checkers consist of
+a small number of types of pieces that have certain behaviors,
+such as captures and promotions.
+We will allow the user to specify the rules of a board game
+of their choice using a DSL, and create search functions that will
+take an evaluation function as input and return the list of moves
+and their corresponding evaluations.
 
 This project will be divided into three main components:
-
-\begin{enumerate}
-\item Designing and implementing a DSL for specifying the rules of the board game
-\item Writing code for fast move generation. This will involve lists of bitboards so that one can take advantage of the speed of bit operations.
-\item Implementing algorithms to search the game tree, implement move ordering, etc.
+\begin{enumerate}[nosep]
+  \item Designing and implementing a DSL for specifying
+        the rules of the board game
+  \item Writing code for fast move generation.
+        This will involve lists of bitboards so that one can
+        take advantage of the speed of bit operations.
+  \item Implementing algorithms to search the game tree,
+        implement move ordering, etc.
 \end{enumerate}
+
+
+% Maybe other ideas:
+%   distributed computing of something
+%   dependent type system/checker
+%   olympiad geometry -> diagram compiler
+%   natural language linting/translating
 
 
 \end{document}
