@@ -26,13 +26,12 @@
 % % % % % % % % % % % % % % % % % % % % %
 % actual content
 
-\title{6.945 Project Proposals}
+\title{A property-based testing library}
 \author{Jason Chen \and CJ Quines \and Matthew Ho}
 
 \begin{document}
 \maketitle
 
-\section{Property-based testing library}
 % name it an animal that eats bugs
 % https://www.cs.tufts.edu/~nr/cs257/archive/john-hughes/quick.pdf
 % https://hackage.haskell.org/package/hedgehog
@@ -58,8 +57,14 @@ with a uniform distribution over the type by default.
 This is interesting because it allows ``generator deriving'':
 we automatically have a way to generate lists of integers
 if we have a way to generate integers.
+
 We also allow users to specify their own distribution
-over types via generics to parallel real world data. % is this even right
+over types via generics to parallel real world data.
+To bias the generator towards poking around edge cases,
+we can use this feature to specify distributions testing extremes,
+or around what would be the boundaries if we did partition testing.
+These would be built-in, and the user would be able to
+specify an alternate distribution as well.
 
 One potential extension to this idea is test shrinking:
 if a counterexample is found for a property,
@@ -72,76 +77,6 @@ which is interesting in the case of recursive types.
 % TODO: distribution of work
 
 
-\section{Better Scheme errors}
-% https://elm-lang.org/news/compilers-as-assistants
-% https://elm-lang.org/news/compiler-errors-for-humans
-
-In a language intended for command-line, interactive use, error messages are an
-essential part of development. Scheme's error messages, however, leave much to
-be desired. The messages are often cryptic, saying only the error proper,
-without giving any context for where the error appeared or indication as to how
-it can be fixed.
-
-We propose an extension for Scheme that provides better error messages. We aim
-to use Scheme's powerful introspection capabilities to include rich context for
-errors, including not just a stack trace, but row and column positions, what is
-expected and what is actually there, and hints about how to fix it, maybe even
-intended for beginners.
-
-While Scheme's debugger is already a powerful tool, it can prove intimidating
-to use for beginners. Further, we believe it is possible to write errors that
-are effective enough to allow one-shot debugging: making a single change after
-seeing the error and fixing it without further interaction.
-
-Modularity will be accomplished by factoring error message capabilities into
-several modules, which can be combined in various ways to produce errors of
-varying levels of detail. For example, one module could be responsible for the
-parsing and tagging of a source file, while another could be responsible for
-examining the stack. Thus, it would be possible to have interactive stack
-traces without having to place everything in a source file.
-
-% TODO: distribution of work
-
-
-\section{Board game move generation and search}
-In chess engines, there are two main components: search and evaluation.
-It is hard to generalize evaluation to other board games,
-as evaluation functions often rely on features specific to each game.
-However, search is much more generalizable.
-
-As one increases search depth, the size of the search tree typically grows
-exponentially. This means that a board game engine must be able to
-generate legal moves extremely quickly in order to reach a reasonable depth,
-and must also have good ways to prune
-(for example, using alpha-beta pruning with some optimizations, and finding
-good ways to sort candidate moves so that they may be pruned more easily).
-
-We propose to generalize the search component of a standard chess engine
-to other board games. Board games such as chess and checkers consist of
-a small number of types of pieces that have certain behaviors,
-such as captures and promotions.
-We will allow the user to specify the rules of a board game
-of their choice using a DSL, and create search functions that will
-take an evaluation function as input and return the list of moves
-and their corresponding evaluations.
-
-This project will be divided into three main components:
-\begin{enumerate}[nosep]
-  \item Designing and implementing a DSL for specifying
-        the rules of the board game
-  \item Writing code for fast move generation.
-        This will involve lists of bitboards so that one can
-        take advantage of the speed of bit operations.
-  \item Implementing algorithms to search the game tree,
-        implement move ordering, etc.
-\end{enumerate}
-
-
-% Maybe other ideas:
-%   distributed computing of something
-%   dependent type system/checker
-%   olympiad geometry -> diagram compiler
-%   natural language linting/translating
 
 
 \end{document}
