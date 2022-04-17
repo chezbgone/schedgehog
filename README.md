@@ -1,4 +1,10 @@
-# scheme-project
+# schedgehog
+[Hedgehog](https://hedgehog.qa/) implemented in MIT Scheme
+
 Project for MIT's 6.945
 
-Repo will be renamed when idea is finalized (meaning, don't expect links to this to be stable).
+<!---
+# Acknowledgements
+This project was built by Jason Chen, CJ Quines, and Matthew Ho.
+Thanks Gerald Jay Sussman for teaching 6.945 etc etc
+-->
