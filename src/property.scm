@@ -1,10 +1,10 @@
 ;; A property is a function with typed arguments returning a bool.
 
 (define-record-type property
-  (make-property types predicate)
+  (make-property types assertion)
   property?
   (types property-types)
-  (predicate property-predicate))
+  (assertion property-assertion))
 
 (define-syntax forall
   (syntax-rules ()
