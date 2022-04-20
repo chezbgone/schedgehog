@@ -19,5 +19,5 @@
           (= (+ x y) (+ y x))))
 
 (property-types prop:addition-commutativity)
-(property-predicate prop:addition-commutativity)
+(property-assertion prop:addition-commutativity)
 |#
