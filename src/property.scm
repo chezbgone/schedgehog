@@ -15,7 +15,7 @@
 ;; example usage:
 #|
 (define prop:addition-commutativity
-  (forall ((x integer?) (y integer?))
+  (forall ((x integer) (y integer))
           (= (+ x y) (+ y x))))
 
 (property-types prop:addition-commutativity)
