@@ -11,7 +11,7 @@
 This is an implementation of the property-based testing library Hedgehog as
 a project for MIT's 6.945 (Adventures in Advanced Symbolic Programming) class.
 
-## Repository Structure 
+## Repository Structure
 
 - `src` schedgehog source code
   - `property.scm`
