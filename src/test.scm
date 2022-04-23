@@ -31,3 +31,11 @@
           (= (+ x y) (+ y x))))
 (check-once prop:addition-commutativity)
 |#
+
+#|
+(define prop:sum-linear
+  (forall ((xs (list integer)) (factor integer))
+          (equal? (* factor (apply + xs))
+                  (apply + (map (lambda (x) (* factor x)) xs)))))
+(check-once prop:mapsum-is-summap)
+|#
