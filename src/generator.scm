@@ -23,26 +23,39 @@
   (make-generator (lambda () (= 0 (random 2)))))
 (add-generator 'boolean arbitrary-boolean)
 
-;; Generates a random character of type 'alpha, 'numeric, 'alphanumeric, or just any character. Alphanumeric characters are letters with probability 50% and numbers with probability 50%.
-(define (arbitrary-character #!optional character-type)
-  (assert (or (member character-type (list 'alpha
-                                           'numeric
-                                           'alphanumeric))
-              (default-object? character-type)))
-  (cond
-   ((equal? character-type 'alpha)
-    (let ((char-number (random 52)))
-      (if (> char-number 25)
-          (integer->char (+ 39 char-number))
-          (integer->char (+ 97 char-number)))))
-   ((equal? character-type 'numeric)
-    (integer->char (+ (random 10) 48)))
-   ((equal? character-type 'alphanumeric)
-    (if (= (random 2) 0)
-        (arbitrary-character 'alpha)
-        (arbitrary-character 'numeric)))
-   (else
-    (integer->char (random char-code-limit)))))
+(define (random-integer-in-range low high)
+  (+ (random (- high low)) low))
+
+(define arbitrary-uppercase-character
+  (make-generator (lambda () (integer->char (+ (char->integer #\A)
+                                               (random 26))))))
+(add-generator 'uppercase-character arbitrary-uppercase-character)
+
+(define arbitrary-lowercase-character
+  (make-generator (lambda () (integer->char (+ (char->integer #\a)
+                                               (random 26))))))
+(add-generator 'lowercase-character arbitrary-lowercase-character)
+
+(define arbitrary-letter
+  (make-generator (lambda () (if (= (random 2) 0)
+                                 ((generate arbitrary-lowercase-character))
+                                 ((generate arbitrary-uppercase-character))))))
+(add-generator 'letter arbitrary-letter)
+
+(define arbitrary-numeric-character
+  (make-generator (lambda () (integer->char (+ (char->integer #\0)
+                                               (random 10))))))
+(add-generator 'numeric-character arbitrary-numeric-character)
+
+(define arbitrary-alphanumeric-character
+  (make-generator (lambda () (if (> (random 62) 9)
+                                 ((generate arbitrary-letter))
+                                 ((generate arbitrary-numeric-character))))))
+(add-generator 'alphanumeric-character arbitrary-alphanumeric-character)
+
+(define arbitrary-character
+  (make-generator (lambda () (integer->char (random char-code-limit)))))
+(add-generator 'character arbitrary-character)
 
 ;; Generates a random string of a fixed length with characters of type character-type. Character-type must be specified, otherwise printing out characters might result in strings longer than intended.
 (define (arbitrary-string length character-type)
