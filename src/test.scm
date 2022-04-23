@@ -33,6 +33,17 @@
 |#
 
 #|
+(define (flip pair)
+  (cons (cdr pair)
+        (car pair)))
+
+(define prop:flip-twice-is-id
+  (forall ((p (pair integer boolean)))
+          (equal? p (flip (flip p)))))
+(check-once prop:flip-twice-is-id)
+|#
+
+#|
 (define prop:sum-linear
   (forall ((xs (list integer)) (factor integer))
           (equal? (* factor (apply + xs))
