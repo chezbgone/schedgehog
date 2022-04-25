@@ -64,6 +64,11 @@
 
 ;;; generator utilities
 
+(define (no-shrink generator)
+  (%make-generator
+   (lambda (size seed)
+     (unshrinkable (lazy-tree-value (generate generator size seed))))))
+
 ;; (a -> b) -> (generator a -> generator b)
 (define (gen:map f generator)
   (%make-generator
@@ -95,29 +100,41 @@
   (gen:app (gen:app (gen:pure cons-curried) genA) genB))
 
 ;; list generator -> generator list
-(define (gen:sequence gens)
+(define (gen:list . gens)
   (cond
    ((null? gens) (gen:pure (list)))
    (else         (gen-pair (car gens) (gen:sequence (cdr gens))))))
 
+;; list generator -> generator list
+(define (gen:sequence gens)
+  (apply gen:list gens))
+
 ;; there is probably a better way of doing this
-(define (gen:apply f gens)
+(define (gen:apply f . gens)
   (gen:app (gen:pure (lambda (seq) (apply f seq))) (gen:sequence gens)))
 
 (define (gen:one-of ls)
   (gen:map (lambda (i) (list-ref ls i))
            (arbitrary `(linear ,(length ls)))))
 
+(define (gen:one-of_ ls)
+  (no-shrink (gen:one-of ls)))
+
 ;; list (number, a) -> generator a
 (define (gen:with-frequencies ls)
-  (error "todo"))
+  (error "unimplemented"))
+
+;; list generators -> generator
+(define (gen:select-from ls)
+  (error "unimplemented"))
+
 
 
 ;; CODE BELOW IS PROBABLY ALL WRONG
 ;; CODE BELOW IS PROBABLY ALL WRONG
 ;; CODE BELOW IS PROBABLY ALL WRONG
 ;; also move them to generator-instances.scm
-
+#|
 (define (random-integer-in-range low high)
   (+ (random (- high low)) low))
 
@@ -158,4 +175,4 @@
       (char->name (arbitrary-character character-type))
       (string-append (char->name (arbitrary-character character-type))
                  (arbitrary-string (- length 1) character-type))))
-
+|#
