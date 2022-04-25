@@ -10,17 +10,20 @@
 ;; (which we lazily generate to conserve memory).
 ;;
 ;; As a result, a generator is a function of the form
-;; gen : size -> seed -> lazy-tree
+;; generator a : {
+;;   gen : size -> seed -> lazy-tree a
+;; }
 (define-record-type generator
   (%make-generator gen)
   generator?
   (gen get-gen))
 
 ;; generator -> size -> (optional seed) -> value
-(define (generate generator size #!optional seed)
-  (cond
-   ((default-object? seed) ((get-gen generator) size (make-random-state #t)))
-   (else                   ((get-gen generator) size seed))))
+(define default-size 20)
+(define (generate generator #!optional size seed)
+  (let ((sz (if (default-object? size) default-size size))
+        (sd (if (default-object? seed) (make-random-state #t) seed)))
+    ((get-gen generator) sz sd)))
 
 (define generator-store (make-hash-table))
 (define (set-generator! type gen)
@@ -28,8 +31,19 @@
 
 ;; symbol -> generator (if found)
 (define (arbitrary type)
-  (hash-table-ref generator-store type
-                  (lambda () (error "no generator found for" type))))
+  (cond
+   ((symbol? type)
+    (hash-table-ref generator-store type
+                    (lambda () (error "no generator found for" type))))
+   ((list? type)
+    (case (car type)
+      ((linear range range-from)
+       (apply (hash-table-ref generator-store (car type))
+              (cdr type)))
+      ((list) (display "generator TODO"))
+      (else (begin (display type)
+                   (display " not found")))
+      ))))
 
 ;; (val -> [val]) -> val -> lazy-tree val
 (define ((make-shrink-tree shrink-fn) value)
@@ -45,27 +59,64 @@
 
 ;; value -> lazy-tree
 (define (unshrinkable value)
-  (make-lazy-tree value (list)))
+  (lazy-tree-node value))
 
 
-;;; generator combinators
+;;; generator utilities
 
-;; monadic return
+;; (a -> b) -> (generator a -> generator b)
+(define (gen:map f generator)
+  (%make-generator
+   (lambda (size seed)
+     (lazy-tree:map f (generate generator size seed)))))
+
+;; applicative pure
 ;; value -> generator
 (define (constant-gen val)
   (%make-generator
    (lambda (size seed)
      (unshrinkable val))))
 
+(define gen:pure constant-gen)
+
+;; generator (a -> b) -> generator a -> generator b
+(define (gen:app gen-f gen-a)
+  (%make-generator
+   (lambda (size seed)
+     (let ((tree-f (generate gen-f size seed))
+           (tree-a (generate gen-a size seed)))
+       (lazy-tree:interleave tree-f tree-a)))))
+
+
+;; generator combinators
+
+(define (gen-pair genA genB)
+  (define ((cons-curried a) b) (cons a b))
+  (gen:app (gen:app (gen:pure cons-curried) genA) genB))
+
+;; list generator -> generator list
+(define (gen:sequence gens)
+  (cond
+   ((null? gens) (gen:pure (list)))
+   (else         (gen-pair (car gens) (gen:sequence (cdr gens))))))
+
+;; there is probably a better way of doing this
+(define (gen:apply f gens)
+  (gen:app (gen:pure (lambda (seq) (apply f seq))) (gen:sequence gens)))
+
+(define (gen:one-of ls)
+  (gen:map (lambda (i) (list-ref ls i))
+           (arbitrary `(linear ,(length ls)))))
+
+;; list (number, a) -> generator a
+(define (gen:with-frequencies ls)
+  (error "todo"))
+
 
 ;; CODE BELOW IS PROBABLY ALL WRONG
 ;; CODE BELOW IS PROBABLY ALL WRONG
 ;; CODE BELOW IS PROBABLY ALL WRONG
 ;; also move them to generator-instances.scm
-
-(define arbitrary-boolean
-  (make-generator (lambda () (= 0 (random 2)))))
-(add-generator 'boolean arbitrary-boolean)
 
 (define (random-integer-in-range low high)
   (+ (random (- high low)) low))

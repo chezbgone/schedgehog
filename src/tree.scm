@@ -10,6 +10,9 @@
 
 ;;; tree utils
 
+(define (lazy-tree-node val)
+  (make-lazy-tree val (list)))
+
 (define ((%lazy-tree:map f) tr)
   (let* ((value (lazy-tree-value tr))       ; a
          (children (lazy-tree-children tr)) ; list (() -> lazy-tree a)
@@ -24,6 +27,21 @@
 (define (lazy-tree:map f tr)
   ((%lazy-tree:map f) tr))
 
+
+;; lazy-tree (a -> b) -> lazy-tree a -> lazy-tree b
+(define (lazy-tree:interleave tree-fs tree-as)
+  (let ((f (lazy-tree-value tree-fs))      ; (a -> b)
+        (ls (lazy-tree-children tree-fs))  ; list (() -> lazy-tree (a -> b))
+        (a (lazy-tree-value tree-as))      ; a
+        (rs (lazy-tree-children tree-as))) ; list (() -> lazy-tree a)
+    (make-lazy-tree
+     (f a)
+     (append (map (lambda (l)
+                    (lambda () (lazy-tree:interleave (l) tree-as)))
+                  ls)
+             (map (lambda (r)
+                    (lambda () (lazy-tree:interleave tree-fs (r))))
+                  rs)))))
 
 (define-record-type tree
   (make-tree value children)
