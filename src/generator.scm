@@ -6,8 +6,8 @@
 ;; One desired property is to be able to map a function over a generator object,
 ;; which requires covariance. To make this structure covariant,
 ;; we can recursively apply the shrinking function to the value obtained from
-;; he generating function. This constructs a tree of ways to shrink the data
-;; (which we lazily generate to save memory).
+;; the generating function. This constructs a tree of ways to shrink the data
+;; (which we lazily generate to conserve memory).
 ;;
 ;; As a result, a generator is a function of the form
 ;; gen : size -> seed -> lazy-tree
@@ -31,10 +31,12 @@
   (hash-table-ref generator-store type
                   (lambda () (error "no generator found for" type))))
 
+;; (val -> [val]) -> val -> lazy-tree val
 (define ((make-shrink-tree shrink-fn) value)
   (make-lazy-tree
    value
-   (map (make-shrink-tree shrink-fn)
+   (map (lambda (shrunk-value)
+          (lambda () ((make-shrink-tree shrink-fn) shrunk-value)))
         (shrink-fn value))))
 
 ;; shrink-function -> value -> lazy-tree
