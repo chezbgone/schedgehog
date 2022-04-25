@@ -24,6 +24,7 @@
 (set-generator! 'linear
                 (lambda (n) (arbitrary `(range 0 ,n))))
 
+
 ;;; booleans
 (set-generator! 'boolean (gen:one-of (list #f #t)))
 (set-generator! 'boolean_ (gen:one-of_ (list #f #t)))
@@ -45,3 +46,51 @@
   (shrinkable-via shrink-integer (arbitrary-integer size seed)))
 
 (set-generator! 'integer (%make-generator integer-gen))
+
+
+;; CODE BELOW IS PROBABLY ALL WRONG
+;; CODE BELOW IS PROBABLY ALL WRONG
+;; CODE BELOW IS PROBABLY ALL WRONG
+;; also move them to generator-instances.scm
+#|
+(define (random-integer-in-range low high)
+  (+ (random (- high low)) low))
+
+(define arbitrary-uppercase-character
+  (make-generator (lambda () (integer->char (+ (char->integer #\A)
+                                               (random 26))))))
+(add-generator 'uppercase-character arbitrary-uppercase-character)
+
+(define arbitrary-lowercase-character
+  (make-generator (lambda () (integer->char (+ (char->integer #\a)
+                                               (random 26))))))
+(add-generator 'lowercase-character arbitrary-lowercase-character)
+
+(define arbitrary-letter
+  (make-generator (lambda () (if (= (random 2) 0)
+                                 ((generate arbitrary-lowercase-character))
+                                 ((generate arbitrary-uppercase-character))))))
+(add-generator 'letter arbitrary-letter)
+
+(define arbitrary-numeric-character
+  (make-generator (lambda () (integer->char (+ (char->integer #\0)
+                                               (random 10))))))
+(add-generator 'numeric-character arbitrary-numeric-character)
+
+(define arbitrary-alphanumeric-character
+  (make-generator (lambda () (if (> (random 62) 9)
+                                 ((generate arbitrary-letter))
+                                 ((generate arbitrary-numeric-character))))))
+(add-generator 'alphanumeric-character arbitrary-alphanumeric-character)
+
+(define arbitrary-character
+  (make-generator (lambda () (integer->char (random char-code-limit)))))
+(add-generator 'character arbitrary-character)
+
+;; Generates a random string of a fixed length with characters of type character-type. Character-type must be specified, otherwise printing out characters might result in strings longer than intended.
+(define (arbitrary-string length character-type)
+  (if (<= length 1)
+      (char->name (arbitrary-character character-type))
+      (string-append (char->name (arbitrary-character character-type))
+                 (arbitrary-string (- length 1) character-type))))
+|#
