@@ -1,29 +1,36 @@
 ;; A state represents the internal state when testing a property.
-
 (define-record-type state
   (make-state successful-tests max-successful-tests)
   state?
   (successful-tests state-successful-tests set-state-successful-tests!)
-  (max-successful-tests state-max-successful-tests
-                        set-state-max-successful-tests!))
+  (max-successful-tests state-max-successful-tests))
 
-(define (generate-value type)
-  ((generate (arbitrary type))))
+; recursively shrink a failing arguments-tree
+(define (shrink-failure assertion arguments-tree)
+  (define (loop children)
+    (if (null? children) #f
+      (let* ((new-tree ((car children)))
+             (arguments (lazy-tree-value new-tree))
+             (result (apply assertion arguments)))
+        (if result (loop (cdr children)) new-tree))))
+  (let ((result (loop (lazy-tree-children arguments-tree))))
+    (if result
+      (shrink-failure assertion result)
+      arguments-tree)))
 
+; checks a property. if it passes, returns #t; otherwise returns failing
+; arguments after shrinking.
 (define (check-once property)
-  (let ((types (property-types property))
-        (assertion (property-assertion property)))
-    (let ((generated-values (map generate-value types)))
-      (apply assertion generated-values))))
-
-;; Main state machine.
-;; Run a test on property.
-;; BROKEN
-(define (test state property)
-  (define res (property-assertion (map gen (property-types))))
-  (and res
-    (set-state-successful-tests! state (+ 1 (successful-tests state))))
-  'done)
+  (let* ((types (property-types property))
+         (assertion (property-assertion property))
+         (arguments-generator (gen:sequence (map arbitrary types)))
+         (arguments-tree (generate arguments-generator))
+         (arguments (lazy-tree-value arguments-tree))
+         (result (apply assertion arguments)))
+    (if result
+      #t
+      (lazy-tree-value
+        (shrink-failure assertion arguments-tree)))))
 
 #|
 (define prop:addition-commutativity
