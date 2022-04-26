@@ -55,5 +55,5 @@
   (forall ((xs (list integer)) (factor integer))
           (equal? (* factor (apply + xs))
                   (apply + (map (lambda (x) (* factor x)) xs)))))
-(check-once prop:mapsum-is-summap)
+(check-once prop:sum-linear)
 |#
