@@ -63,6 +63,13 @@
 
 
 ;;; generator utilities
+
+;; sizing
+(define (resize size gen)
+  (%make-generator
+   (lambda (old-size seed)
+     (generate gen size seed))))
+
 ;; generating-function -> generator
 (define (no-shrink generator)
   (%make-generator

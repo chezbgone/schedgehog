@@ -39,22 +39,30 @@
     ((< n 0) (list (+ n 1) (quotient n 2) 0))
     (else (list)))))
 
-(define (arbitrary-integer size seed)
-  (random size seed))
-
 (define (integer-gen size seed)
-  (shrinkable-via shrink-integer (arbitrary-integer size seed)))
-
+  (let ((generated-integer (- (random (- (* 2 size) 1) seed) (- n 1))))
+    (shrinkable-via shrink-integer generated-integer)))
 (set-generator! 'integer (%make-generator integer-gen))
 
+(define (nonnegative-integer-gen size seed)
+  (shrinkable-via shrink-integer (random size seed)))
+(set-generator! 'nonnegative-integer (%make-generator nonnegative-integer-gen))
+
+
+;;; lists
+(define (list-gen type)
+  (gen:then (arbitrary 'nonnegative-integer)
+            (lambda (n)
+              (gen:sequence (make-list n (arbitrary type))))))
+
+
+;; TODO
+;; gen:subsequence
+;; gen:permutation
+
 
 ;; CODE BELOW IS PROBABLY ALL WRONG
-;; CODE BELOW IS PROBABLY ALL WRONG
-;; CODE BELOW IS PROBABLY ALL WRONG
-;; also move them to generator-instances.scm
 #|
-(define (random-integer-in-range low high)
-  (+ (random (- high low)) low))
 
 (define arbitrary-uppercase-character
   (make-generator (lambda () (integer->char (+ (char->integer #\A)
