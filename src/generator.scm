@@ -138,10 +138,23 @@
 (define (gen:one-of_ ls)
   (no-shrink (gen:one-of ls)))
 
-;; list (number, a) -> generator a
-(define (gen:with-frequencies ls)
-  (error "unimplemented"))
-
 ;; list generators -> generator
 (define (gen:select-from ls)
-  (error "unimplemented"))
+  (gen:then (arbitrary `(linear ,(length ls)))
+            (lambda (idx)
+              (list-ref ls idx))))
+
+;; list (number, a) -> generator a
+(define (gen:with-frequencies ls)
+  (define (create-lst-with-freqs freqs elements)
+    (if (> (length freqs) 0)
+        (if (= (car freqs) 0)
+            (create-lst-with-freqs (cdr freqs) (cdr elements))
+            (cons (car elements) (create-lst-with-freqs (cons (- (car freqs) 1)
+                                                              (cdr freqs))
+                                                        elements)))
+        '()))
+  (let* ((freq-lst (map car ls))
+         (gen-lst (map cdr ls))
+         (list-elements-weighted (create-lst-with-freqs freq-lst gen-lst)))
+    (gen:select-from list-elements-weighted)))

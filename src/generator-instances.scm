@@ -40,7 +40,7 @@
     (else (list)))))
 
 (define (integer-gen size seed)
-  (let ((generated-integer (- (random (- (* 2 size) 1) seed) (- n 1))))
+  (let ((generated-integer (- (random (- (* 2 size) 1) seed) (- size 1))))
     (shrinkable-via shrink-integer generated-integer)))
 (set-generator! 'integer (%make-generator integer-gen))
 
