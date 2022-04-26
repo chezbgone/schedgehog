@@ -92,6 +92,17 @@
            (tree-a (generate gen-a size seed)))
        (lazy-tree:interleave tree-f tree-a)))))
 
+;; (generator a) -> (a -> generator b) -> (generator b)
+(define (gen:bind gen continuation)
+  (%make-generator
+   (lambda (size seed)
+     (let* ((tree-a (generate gen size seed))          ; lazy-tree a
+            (tree-cont                                 ; a -> lazy-tree b
+             (lambda (a)
+               (generate (continuation a) size seed))))
+       (lazy-tree:bind tree-a tree-cont)))))
+
+(define gen:then gen:bind)
 
 ;;; generator combinators
 ;; generator -> generator -> generator
