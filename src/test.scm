@@ -57,10 +57,15 @@
   (define (loop)
     (set! tries (+ tries 1))
     (if (>= tries (config-test-limit config))
-      #t ; succeeded
+      (begin ; we succeeded
+        (display "ok ")
+        (display tries)
+        (display " tests")
+        (newline)
+        #t)
       (let ((result (check-once config size seed property)))
         (if (failure? result)
-          (begin
+          (begin ; we failed
             (display "failed after ")
             (display tries)
             (display " tests, ")
@@ -78,6 +83,10 @@
 ;; Checks a property with the default everything.
 (define (check property)
   (define seed (make-random-state #t))
+  (display "seed:")
+  (newline)
+  (display (export-random-state seed))
+  (newline)
   (check-with-config default-config default-size seed property))
 
 #|
