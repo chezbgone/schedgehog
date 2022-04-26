@@ -64,6 +64,13 @@
 
 ;;; generator utilities
 
+;; shrink-function -> generator -> generator
+(define ((replace-shrink-tree shrink-fn) gen)
+  (%make-generator
+   (lambda (size seed)
+     (shrinkable-via shrink-fn
+                     (lazy-tree-value (generate gen size seed))))))
+
 ;; sizing
 (define (resize size gen)
   (%make-generator
