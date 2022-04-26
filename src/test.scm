@@ -5,8 +5,14 @@
   (successful-tests state-successful-tests set-state-successful-tests!)
   (max-successful-tests state-max-successful-tests))
 
+(define-record-type failure
+  (make-failure shrinks inputs)
+  failure?
+  (shrinks failure-shrinks)
+  (inputs failure-arguments))
+
 ; recursively shrink a failing arguments-tree
-(define (shrink-failure assertion arguments-tree)
+(define (shrink-failure shrinks assertion arguments-tree)
   (define (loop children)
     (if (null? children) #f
       (let* ((new-tree ((car children)))
@@ -15,8 +21,8 @@
         (if result (loop (cdr children)) new-tree))))
   (let ((result (loop (lazy-tree-children arguments-tree))))
     (if result
-      (shrink-failure assertion result)
-      arguments-tree)))
+      (shrink-failure (+ 1 shrinks) assertion result)
+      (make-failure shrinks (lazy-tree-value arguments-tree)))))
 
 ; checks a property. if it passes, returns #t; otherwise returns failing
 ; arguments after shrinking.
@@ -29,8 +35,7 @@
          (result (apply assertion arguments)))
     (if result
       #t
-      (lazy-tree-value
-        (shrink-failure assertion arguments-tree)))))
+      (shrink-failure 0 assertion arguments-tree))))
 
 #|
 (define prop:addition-commutativity
