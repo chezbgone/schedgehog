@@ -97,7 +97,7 @@
 ;; generator -> generator -> generator
 (define (gen-pair genA genB)
   (define ((cons-curried a) b) (cons a b))
-  (gen:app (gen:app (gen:pure cons-curried) genA) genB))
+  (gen:app (gen:map cons-curried genA) genB))
 
 ;; list generator -> generator list
 (define (gen:list . gens)
@@ -111,7 +111,7 @@
 
 ;; there is probably a better way of doing this
 (define (gen:apply f . gens)
-  (gen:app (gen:pure (lambda (seq) (apply f seq))) (gen:sequence gens)))
+  (gen:map (lambda (seq) (apply f seq)) (gen:sequence gens)))
 
 (define (gen:one-of ls)
   (gen:map (lambda (i) (list-ref ls i))
