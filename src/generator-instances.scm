@@ -39,21 +39,49 @@
     ((< n 0) (list (+ n 1) (quotient n 2) 0))
     (else (list)))))
 
-(define (integer-gen size seed)
-  (let ((generated-integer (- (random (- (* 2 size) 1) seed) (- size 1))))
-    (shrinkable-via shrink-integer generated-integer)))
-(set-generator! 'integer (%make-generator integer-gen))
+(define integer-gen
+  ((replace-shrink-tree shrink-integer)
+   (sized (lambda (size) (arbitrary `(range ,(- 1 size) ,size))))))
+(set-generator! 'integer integer-gen)
 
-(define (nonnegative-integer-gen size seed)
-  (shrinkable-via shrink-integer (random size seed)))
-(set-generator! 'nonnegative-integer (%make-generator nonnegative-integer-gen))
+(define positive-integer-gen
+  ((replace-shrink-tree shrink-integer)
+   (sized (lambda (size) (arbitrary `(range 1 ,size))))))
+(set-generator! 'positive-integer positive-integer-gen)
 
+
+(define nonnegative-integer-gen
+  ((replace-shrink-tree shrink-integer)
+   (sized (lambda (size) (arbitrary `(linear ,size))))))
+(set-generator! 'nonnegative-integer nonnegative-integer-gen)
 
 ;;; lists
+
+(define (lengthed-list-gen type len)
+  (gen:sequence (make-list len (arbitrary type))))
+
 (define (list-gen type)
   (gen:then (arbitrary 'nonnegative-integer)
             (lambda (n)
-              (gen:sequence (make-list n (arbitrary type))))))
+              (lengthed-list-gen type n))))
+
+(define (nonempty-list-gen type)
+  (gen:then (arbitrary 'positive-integer)
+            (lambda (n)
+              (lengthed-list-gen type n))))
+
+;;; floats
+
+(define (shrink-float x)
+  (assert (real? x))
+  (assert ((lambda (x) (not (exact-integer? x))) x))
+  (let ((origin (round x)))
+    (list (/ (+ x origin) 2))))
+
+(define (float-gen size seed)
+  (let ((generated-float (- (random (inexact (* 2 size)) seed) size)))
+    (shrinkable-via shrink-float generated-float)))
+(set-generator! 'float (%make-generator float-gen))
 
 
 ;; TODO
