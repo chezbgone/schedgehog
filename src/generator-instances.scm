@@ -55,6 +55,20 @@
    (sized (lambda (size) (arbitrary `(linear ,size))))))
 (set-generator! 'nonnegative-integer nonnegative-integer-gen)
 
+;;; floats
+
+(define (shrink-float x)
+  (assert (real? x))
+  (assert ((lambda (x) (not (exact-integer? x))) x))
+  (let ((origin (round x)))
+    (list (/ (+ x origin) 2))))
+
+(define (float-gen size seed)
+  (let ((generated-float (- (random (inexact (* 2 size)) seed) size)))
+    (shrinkable-via shrink-float generated-float)))
+(set-generator! 'float (%make-generator float-gen))
+
+
 ;;; lists
 
 (define (lengthed-list-gen type len)
@@ -70,23 +84,27 @@
             (lambda (n)
               (lengthed-list-gen type n))))
 
-;;; floats
 
-(define (shrink-float x)
-  (assert (real? x))
-  (assert ((lambda (x) (not (exact-integer? x))) x))
-  (let ((origin (round x)))
-    (list (/ (+ x origin) 2))))
+(define (gen:subsequence ls)
+  (gen:map (lambda (bool-lst)
+             (map cdr (filter car (map cons bool-lst ls))))
+           (lengthed-list-gen 'boolean (length ls))))
 
-(define (float-gen size seed)
-  (let ((generated-float (- (random (inexact (* 2 size)) seed) size)))
-    (shrinkable-via shrink-float generated-float)))
-(set-generator! 'float (%make-generator float-gen))
+(define (gen:permutation ls)
+  (if (null? ls)
+      (gen:pure '())
+      (gen:then (arbitrary `(range 0 ,(length ls)))
+                (lambda (idx)
+                  (gen:map (lambda (sublist)
+                             (cons (list-ref ls idx) sublist))
+                           (gen:permutation ((lambda (lst idx)
+                                               (append (take lst idx)
+                                                       (drop lst (+ idx 1))))
+                                             ls
+                                             idx)))))))
 
 
 ;; TODO
-;; gen:subsequence
-;; gen:permutation
 
 
 ;; CODE BELOW IS PROBABLY ALL WRONG
