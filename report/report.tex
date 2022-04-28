@@ -75,7 +75,7 @@ in other arguments.
 
 \begin{verbatim}
 (define prop:addition-bounds
-  (forall ((x range 10 30) (y range 10 30))
+  (forall ((x (range 10 30)) (y (range 10 30)))
           (< 20 (+ x y) 60)))
 \end{verbatim}
 
@@ -99,7 +99,7 @@ the result of the test, along with a counterexample if found.
 ; ok 100 tests
 (check prop:addition-bounds)
 ; seed: ...
-; failed after 73 tests, 2 shrinks:
+; failed after 82 tests, 0 shrinks:
 ; ((x 10) (y 10))
 \end{verbatim}
 

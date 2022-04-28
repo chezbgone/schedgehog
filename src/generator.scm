@@ -30,7 +30,6 @@
   (hash-table-set! generator-store type gen))
 
 ;; symbol -> generator (if found)
-;; TODO: allow (arbitrary '(integer))
 (define (arbitrary type)
   (cond
    ((symbol? type)

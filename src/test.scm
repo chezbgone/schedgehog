@@ -72,7 +72,7 @@
             (display (failure-shrinks result))
             (display " shrinks:")
             (newline)
-            (display (failure-arguments result))
+            (display (zip (property-vars property) (failure-arguments result)))
             (newline)
             result)
           (loop)))))
