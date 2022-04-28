@@ -32,57 +32,107 @@
 \begin{document}
 \maketitle
 
-% name it an animal that eats bugs
-% https://www.cs.tufts.edu/~nr/cs257/archive/john-hughes/quick.pdf
-% https://hackage.haskell.org/package/hedgehog
-
 \section{Overview}
 
-In software engineering, testing code is considered to
-be a vital part of delivering quality software.
-However, writing unit tests is extremely time consuming,
-and it is easy for the programmer to miss certain cases
-for more complicated functions.
-Therefore, it is desirable to try to automate this processes
-either partially, or entirely.
+In software engineering, testing code is considered to be a vital part of
+delivering quality software. However, writing unit tests is extremely time
+consuming, and it is easy for the programmer to miss certain cases for more
+complicated functions. Therefore, it is desirable to try to automate this
+processes either partially, or entirely.
 
-We build a QuickCheck-like tool that allows users to
-formulate properties of programs and then
-automatically runs tests based on the properties.
-Properties that users want to test will be specified
-via a DSL embedded in Scheme.
-The properties will be represented as functions
-along with typing information of the parameters,
-where the types will enable the generation of test data.
-To generate the actual test data, we choose random testing,
-with a uniform distribution over the type by default.
-This is interesting because it allows ``generator deriving'':
-we automatically have a way to generate lists of integers
-if we have a way to generate integers.
+We present a tool called \textbf{Schedgehog}, based on existing Haskell work
+like QuickCheck \cite{quickcheck} or Hedgehog \cite{hedgehog}, that allows
+users to formulate properties of programs and then automatically runs tests
+based on the properties. Properties that users want to test will be specified
+via a DSL embedded in Scheme; these are represented as functions along with
+typing information.
 
-We also allow users to specify their own distribution
-over types via generics to parallel real world data.
-To bias the generator towards poking around edge cases,
-we can use this feature to specify distributions testing extremes,
-or around what would be the boundaries if we did partition testing.
-These would be built-in, and the user would be able to
-specify an alternate distribution as well.
+Test data is generated based on this typing information. Schedgehog's generators
+are generic functions that satisfy two main properties:
 
-One potential extension to this idea is test shrinking:
-if a counterexample is found for a property,
-the library will automatically simplify
-the failure case to a minimal failing example
-via a built-in (and user-defined) rule system.
-This involves defining a generic shrinking function for each type,
-which is interesting in the case of recursive types.
+\begin{itemize}
+\item \textit{generator derivation}, which allows automatically generating new
+types by using combinators over existing generators, and,
+\item \textit{test shrinking}, which allows automatically simplifying failing
+counterexamples, via a built-in user-extensible rule-based system.
+\end{itemize}
 
-\section{Usage}
+\section{Basic usage}
 
+Properties are specified with the macro \verb|forall|. Properties are functions
+with typed arguments that return a boolean.
 
-\section{Generators and shrinkers}
+\begin{verbatim}
+(define prop:addition-commutativity
+  (forall ((x integer) (y integer))
+          (= (+ x y) (+ y x))))
+\end{verbatim}
 
+Primitive types include \verb|integer|, \verb|boolean|, and \verb|float|. A full
+list of built-in primitive types are in \verb|src/generator-instances.scm|.
+There are also dependent types, like \verb|linear| or \verb|range|, that take
+in other arguments.
+
+\begin{verbatim}
+(define prop:addition-bounds
+  (forall ((x range 10 30) (y range 10 30))
+          (< 20 (+ x y) 60)))
+\end{verbatim}
+
+These types can be combined with type constructors to produce more complex
+types. Some examples of type constructors include \verb|pair| and \verb|list|.
+
+\begin{verbatim}
+(define prop:sum-linear
+  (forall ((xs (list integer)) (factor integer))
+          (equal? (* factor (apply + xs))
+                  (apply + (map (lambda (x) (* factor x)) xs)))))
+\end{verbatim}
+
+The main interface for checking a property is with the function \verb|check|.
+This runs the function against several random test cases. It then prints
+the result of the test, along with a counterexample if found.
+
+\begin{verbatim}
+(check prop:addition-commutativity)
+; seed: ...
+; ok 100 tests
+(check prop:addition-bounds)
+; seed: ...
+; failed after 73 tests, 2 shrinks:
+; ((x 10) (y 10))
+\end{verbatim}
+
+\section{Generators}
+
+% talk about types
+% talk about generics idk
+% talk about custom generators
+% talk about distributions
+
+\section{Shrinkers}
+
+% talk about shrinkers
+% talk about the lazy tree and how implementation can be swapped
+
+\section{Combinators}
+
+% talk about combinators
 
 \section{Extensions}
 
+% idk
+
+\begin{thebibliography}{99}
+
+\bibitem{quickcheck}
+Claessen, K., \& Hughes, J. (2011). QuickCheck: a lightweight tool for random
+testing of Haskell programs. \textit{ACM SigPlan Notices}, 46(4), 53-64.
+
+\bibitem{hedgehog}
+Hedgehog QA. (2019). Hedgehog will eat all your bugs. Retrieved from
+\url{https://hedgehog.qa/}.
+
+\end{thebibliography}
 
 \end{document}
