@@ -5,7 +5,15 @@
 
 % standard
 \usepackage{mathtools, amssymb, amsthm}
-\usepackage{hyperref}
+
+% refs
+\usepackage{xcolor}
+\usepackage[pdftex, colorlinks]{hyperref}
+\definecolor{urlcolor}{rgb}{0.9, 0, 0.5}
+\definecolor{linkcolor}{rgb}{0, 0.2, 0.8}
+\definecolor{citecolor}{rgb}{0, 0.6, 0.3}
+\hypersetup{urlcolor=urlcolor, linkcolor=linkcolor, citecolor=citecolor}
+\usepackage[nameinlink]{cleveref}
 
 % layout
 \usepackage[margin=1.5cm, includefoot]{geometry}
@@ -19,13 +27,17 @@
 \usepackage[scaled=0.83]{beramono}
 \usepackage{microtype}
 \usepackage[shortlabels, inline]{enumitem}
-\setlist{noitemsep, topsep=0.4em, listparindent=\parindent}
+\setlist{nosep, listparindent=\parindent}
 
 % smaller title style
 \makeatletter \patchcmd{\@maketitle}{\huge}{\large}{}{} \makeatother
 \setkomafont{author}{\normalsize\scshape}
 \setkomafont{date}{\normalsize}
 \RedeclareSectionCommand[beforeskip=0.4\baselineskip]{paragraph}
+
+% temp config
+\definecolor{todocolor}{rgb}{0.8, 0.1, 0.1}
+\NewDocumentCommand{\TODO}{o}{\textcolor{todocolor}{TODO\IfNoValueF{#1}{: #1}}}
 
 % % % % % % % % % % % % % % % % % % % % %
 % actual content
@@ -48,21 +60,27 @@ We present a tool called \textbf{Schedgehog}, based on existing Haskell work
 like QuickCheck \cite{quickcheck} or Hedgehog \cite{hedgehog}, that allows
 users to formulate properties of programs and then automatically runs tests
 based on the properties. Properties that users want to test will be specified
-via a DSL embedded in Scheme; these are represented as functions along with
-typing information.
+via a DSL embedded in Scheme; these are represented as predicates (functions
+returning booleans) along with typing information of the inputs.
 
-Test data is generated based on this typing information. Schedgehog's generators
-are generic functions that satisfy two main properties:
+Test data is generated based on this typing information. These are checked
+against the predicates, and in the case that a failing counterexample is found,
+the counterexample is simplified via a build-in extensible rule-based system.
 
+\iffalse
+Schedgehog's generators
+are generic functions associated with a type that serve two main purposes:
 \begin{itemize}
-\item \textit{generator derivation}, which allows automatically generating new
-types by using combinators over existing generators, and,
-\item \textit{test shrinking}, which allows automatically simplifying failing
-counterexamples, via a built-in user-extensible rule-based system.
+  \item \emph{value generation}, which is the generation of new value of
+        the type given size and seed parameters, and
+  \item \emph{test shrinking}, which allows automatically simplifying failing
+        counterexamples, via a built-in user-extensible rule-based system.
 \end{itemize}
+\fi
 
 \section{Basic usage}
 
+\subsection{Defining properties}
 Properties are specified with the macro \verb|forall|. Properties are functions
 with typed arguments that return a boolean.
 
@@ -75,7 +93,7 @@ with typed arguments that return a boolean.
 Primitive types include \verb|integer|, \verb|boolean|, and \verb|float|. A full
 list of built-in primitive types are in \verb|src/generator-instances.scm|.
 There are also dependent types, like \verb|linear| or \verb|range|, that take
-in other arguments.
+in values as arguments.
 
 \begin{verbatim}
 (define prop:addition-bounds
@@ -93,6 +111,7 @@ types. Some examples of type constructors include \verb|pair| and \verb|list|.
                   (apply + (map (lambda (x) (* factor x)) xs)))))
 \end{verbatim}
 
+\subsection{Checking properties}
 The main interface for checking a property is with the function \verb|check|.
 This runs the function against several random test cases. It then prints
 the result of the test, along with a counterexample if found.
@@ -120,27 +139,39 @@ size (which determines the size of generated inputs), and seed.
 ; ok 1000 tests
 \end{verbatim}
 
-\section{Generators}
+\section{Generators}\label{sec:generators}
+\subsection{Overview}
 
 The file \verb|examples/generator.scm| contains extensive examples of the
 library of built-in generators.
 
-A generator represents a source of values for randomly checking a property.
+% TODO: maybe better syntax for function parameters
+A generator represents a source of values for randomly checking a property,
+along with the way in which values in the type shrink.
 Intuitively, it can be thought of as a structure containing two components:
 \begin{itemize}
-\item A generating function \verb|size -> seed -> value|
-\item A shrinking function \verb|value -> list value|
+\item A generating function \verb|(size -> seed -> value)|
+\item A shrinking function \verb|(value -> list value)|
 \end{itemize}
-A generating function alone is not a generator object, for a generator object
-must return a lazy tree of values. To create a generator without dealing with
-lazy tree internals, we would need to call library functions.
+Internally, a generator is actually a wrapper around just one function
+\verb|(size -> seed -> lazy-tree value)|, a function returning a lazy tree of
+values. This design decision will be explained in
+\cref{sec:generator-internals}.
+To create a generator without dealing with lazy tree internals,
+we can call library functions that abstract away these details.
 
+% TODO: figure out the hbox here
 Suppose one had a generating function \verb|gen|. The simplest way to make a
 generator would be to call \verb|(make-generator-without-shrinking gen)|,
-which returns a generator object that does not have a shrinker.
-
+which returns a generator object using the generating function that does not
+have a shrinker.
 \begin{verbatim}
 (define gen-1 (make-generator-without-shrinking (lambda (size seed) 1)))
+\end{verbatim}
+
+We can then use the generator with the \verb|generate| function,
+which optionally receives a size and seed as parameters.
+\begin{verbatim}
 (print-lazy-tree (generate gen-1))
 \end{verbatim}
 
@@ -178,10 +209,62 @@ Note that the type of generators forms a monad. The monad methods are in the
 library as \verb|gen:pure| and \verb|gen:bind|; we also provide convenience
 functions \verb|gen:map|, \verb|gen:apply|, \verb|gen:list|, etc.
 
-\section{Shrinkers}
+\subsection{Internals}\label{sec:generator-internals}
+\subsubsection{Rationale}
+As mentioned in \cref{sec:generators}, a generator for values of type \verb|T|,
+denoted as a \verb|(generator T)|,
+can be thought of as a pair of functions,
+\begin{itemize}
+  \item \verb|gen| for value generation
+        with type \verb|(size -> seed -> T)|, and
+  \item \verb|shrink| for shrinking with type \verb|(T -> list T)|.
+\end{itemize}
+However, representing a generator as a collection of these two functions,
+referred to as \emph{manual shrinking}, has some downsides.
+% TODO: cite https://www.tweag.io/blog/2021-07-21-qcheck2-integrated-shrinking/
+%       and https://www.well-typed.com/blog/2019/05/integrated-shrinking/
 
-% talk about shrinkers
-% talk about the lazy tree and how implementation can be swapped
+One desired property of a generator is \emph{invariant preservation}.
+Many generators represent types with some invariant,
+and we want both \verb|gen| and \verb|shrink| to satisfy these invariants.
+For instance if we are generating integers between 10 and 20,
+\verb|gen| must only generate numbers in this range,
+and \verb|shrink| must not return a number in this range.
+Both functions trying to satisfy these invariants
+often leads to duplicate code, which is tedious to write and
+makes it more likely for discrepancies to arise.
+
+Another desired property of a generator is
+ease of composition with other functions.
+If we have a \verb|(generator T)| and a function \(f\) of type \verb|(T -> S)|,
+it seems like we should be able to obtain a \verb|(generator S)| just by
+mapping the function over the values that \verb|gen| gives.
+This is indeed true, but we cannot do the same thing for \verb|shrink|,
+as it takes \verb|T|s as both inputs and outputs.
+This is called parameter invariance, which makes composition difficult.
+
+\subsubsection{Structure}
+To solve these issues in the generator structure,
+we combine the two functions needed for generation and shrinking.
+To do so, whenever we generate a value,
+we also generate the values that it shrinks to,
+and then recursively generate the values those new values shrink to, and so on.
+This results in a generator structure that is a wrapper around a single
+function \verb|(size -> seed -> (tree T))|.
+
+The type \verb|(tree T)| is a record structure containing
+  a value of type \verb|T| and
+  a list of children of type \verb|(list (tree T))|s.
+In the context of a generator, it represents
+  a generated value
+  along with the list of shrunk values and their own shrink values.
+  
+To make a slight optimization, we can note that the children of the root
+of the tree are not actually needed until a generated value is
+a failing example of a property.
+As a result, we can make the list of children lazy,
+since generating the shrunk values is unnecessary until needed in shrinking.
+
 
 \section{Combinators}
 
