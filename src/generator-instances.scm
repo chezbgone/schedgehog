@@ -67,6 +67,12 @@
 (set-generator! 'float (%make-generator float-gen))
 
 
+;;; pairs
+(define (pair-gen type-a type-b)
+  (gen:cons (arbitrary type-a) (arbitrary type-b)))
+(set-generator! 'pair pair-gen)
+
+
 ;;; lists
 (define (lengthed-list-gen type len)
   (gen:sequence (make-list len (arbitrary type))))
@@ -82,26 +88,24 @@
             (lambda (n) (lengthed-list-gen type n))))
 (set-generator! 'nonempty-list nonempty-list-gen)
 
-
-(define (gen:subsequence ls)
+(define (subsequence-gen ls)
   (gen:map (lambda (bool-lst)
              (map cdr (filter car (map cons bool-lst ls))))
            (lengthed-list-gen 'boolean (length ls))))
-(set-generator! 'subsequence gen:subsequence)
+(set-generator! 'subsequence subsequence-gen)
 
-(define (gen:permutation ls)
+(define (permutation-gen ls)
   (if (null? ls)
       (gen:pure (list))
       (gen:then (arbitrary `(linear ,(length ls)))
                 (lambda (idx)
-                  (gen:map (lambda (sublist)
-                             (cons (list-ref ls idx) sublist))
-                           (gen:permutation ((lambda (lst idx)
-                                               (append (take lst idx)
-                                                       (drop lst (+ idx 1))))
-                                             ls
-                                             idx)))))))
-(set-generator! 'permutation gen:permutation)
+                  (let ((extracted-element (list-ref ls idx))
+                        (before-elements (take ls idx))
+                        (after-elements (drop ls (+ idx 1))))
+                    (gen:map (lambda (rest) (cons extracted-element rest))
+                             (gen:permutation (append before-elements
+                                                      after-elements))))))))
+(set-generator! 'permutation permutation-gen)
 
 
 ;; CODE BELOW IS PROBABLY ALL WRONG

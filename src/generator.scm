@@ -90,23 +90,8 @@ generator a : {
                     (lambda () (error "no generator found for" type))))
    ((list? type)
     (apply (arbitrary (car type))
-           (cdr type))
-    )
-   (else (error "arbitrary instance not found"))
-   #|
-   ((list? type)
-    (case (car type)
-      ((linear range range-from)
-       (apply (hash-table-ref generator-store (car type))
-              (cdr type)))
-      ((list) (list-gen (cadr type)))
-      ((pair) (gen:pair (arbitrary (cadr type))
-                        (arbitrary (caddr type))))
-      (else (begin (display type)
-                   (display " not found")))
-      ))
-   |#
-   ))
+           (cdr type)))
+   (else (error "arbitrary instance not found for" type))))
 
 
 ;;; generator utilities

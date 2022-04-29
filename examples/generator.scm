@@ -75,10 +75,10 @@
   (print-lazy-tree (generate generator)))
 ;; Note that it interleaves shrinking of both coordinates.
 
-;; gen:list takes in an arbitrary number of generators and generates a list:
-(let ((generator (gen:list (arbitrary '(range-from 0 -2 2))
-                           (arbitrary 'boolean)
-                           (gen:one-of (list 1337 350)))))
+;; gen:collect takes in an arbitrary number of generators and generates a list:
+(let ((generator (gen:collect (arbitrary '(range-from 0 -2 2))
+                              (arbitrary 'boolean)
+                              (gen:one-of (list 1337 350)))))
   (newline)
   (print-lazy-tree (generate generator)))
 

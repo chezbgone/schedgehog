@@ -1,19 +1,19 @@
 ;; generator -> generator -> generator
-(define (gen:pair genA genB)
+(define (gen:cons genA genB)
   (define ((cons-curried a) b) (cons a b))
   (gen:app (gen:map cons-curried genA) genB))
 
-;; list generator -> generator list
-(define (gen:list . gens)
+;; generator args -> generator list
+(define (gen:collect . gens)
   (cond
    ((null? gens) (gen:pure (list)))
-   (else         (gen:pair (car gens) (gen:sequence (cdr gens))))))
+   (else         (gen:cons (car gens) (gen:sequence (cdr gens))))))
 
 ;; list generator -> generator list
 (define (gen:sequence gens)
-  (apply gen:list gens))
+  (apply gen:collect gens))
 
-;; there is probably a better way of doing this
+;; gen:map but better
 (define (gen:apply f . gens)
   (gen:map (lambda (seq) (apply f seq)) (gen:sequence gens)))
 
