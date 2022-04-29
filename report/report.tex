@@ -156,7 +156,7 @@ Intuitively, it can be thought of as a structure containing two components:
 Internally, a generator is actually a wrapper around just one function
 \verb|(size -> seed -> lazy-tree value)|, a function returning a lazy tree of
 values. This design decision will be explained in
-\cref{sec:generator-internals}.
+\cref{sec:trees}.
 To create a generator without dealing with lazy tree internals,
 we can call library functions that abstract away these details.
 
@@ -209,8 +209,8 @@ Note that the type of generators forms a monad. The monad methods are in the
 library as \verb|gen:pure| and \verb|gen:bind|; we also provide convenience
 functions \verb|gen:map|, \verb|gen:apply|, \verb|gen:collect|, etc.
 
-\subsection{Internals}\label{sec:generator-internals}
-\subsubsection{Rationale}
+\section{Trees}\label{sec:trees}
+\subsection{Rationale}
 As mentioned in \cref{sec:generators}, a generator for values of type \verb|T|,
 denoted as a \verb|(generator T)|,
 can be thought of as a pair of functions,
@@ -243,7 +243,7 @@ This is indeed true, but we cannot do the same thing for \verb|shrink|,
 as it takes \verb|T|s as both inputs and outputs.
 This is called parameter invariance, which makes composition difficult.
 
-\subsubsection{Structure}
+\subsection{Structure}
 To solve these issues in the generator structure,
 we combine the two functions needed for generation and shrinking.
 To do so, whenever we generate a value,
@@ -258,7 +258,7 @@ The type \verb|(tree T)| is a record structure containing
 In the context of a generator, it represents
   a generated value
   along with the list of shrunk values and their own shrink values.
-  
+
 To make a slight optimization, we can note that the children of the root
 of the tree are not actually needed until a generated value is
 a failing example of a property.
@@ -266,11 +266,11 @@ As a result, we can make the list of children lazy,
 since generating the shrunk values is unnecessary until needed in shrinking.
 
 
-\section{Combinators}
+% \section{Combinators}
 
 % talk about combinators
 
-\section{Extensions}
+% \section{Extensions}
 
 % idk
 % coarbitrary (function types)
