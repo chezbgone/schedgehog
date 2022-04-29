@@ -68,8 +68,8 @@
 (print-lazy-tree (generate (gen:map times-two (arbitrary 'integer)) 5))
 ;; Notice that the shrink values also are mapped!
 
-;; gen-pair takes two generators and returns a generator that generates a pair:
-(let ((generator (gen-pair (arbitrary '(range-from 0 -1 5))
+;; gen:pair takes two generators and returns a generator that generates a pair:
+(let ((generator (gen:pair (arbitrary '(range-from 0 -1 5))
                            (arbitrary 'boolean))))
   (newline)
   (print-lazy-tree (generate generator)))

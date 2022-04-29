@@ -31,7 +31,6 @@
 
 
 ;;; integers
-;; todo: deal with positive/negative stuff
 (define (shrink-integer n)
   (delete-duplicates
    (cond
@@ -45,21 +44,20 @@
 (set-generator! 'integer integer-gen)
 
 (define positive-integer-gen
-  (replace-shrinking shrink-integer
+  (replace-shrinking (lambda (n) (delete 0 (shrink-integer n)))
    (sized (lambda (size) (arbitrary `(range 1 ,size))))))
 (set-generator! 'positive-integer positive-integer-gen)
-
 
 (define nonnegative-integer-gen
   (replace-shrinking shrink-integer
    (sized (lambda (size) (arbitrary `(linear ,size))))))
 (set-generator! 'nonnegative-integer nonnegative-integer-gen)
 
-;;; floats
 
+;;; floats
 (define (shrink-float x)
   (assert (real? x))
-  (assert ((lambda (x) (not (exact-integer? x))) x))
+  (assert (not (exact-integer? x)))
   (let ((origin (round x)))
     (list (/ (+ x origin) 2))))
 
@@ -70,30 +68,31 @@
 
 
 ;;; lists
-
 (define (lengthed-list-gen type len)
   (gen:sequence (make-list len (arbitrary type))))
+(set-generator! 'lengthed-list lengthed-list-gen)
 
 (define (list-gen type)
   (gen:then (arbitrary 'nonnegative-integer)
-            (lambda (n)
-              (lengthed-list-gen type n))))
+            (lambda (n) (lengthed-list-gen type n))))
+(set-generator! 'list list-gen)
 
 (define (nonempty-list-gen type)
   (gen:then (arbitrary 'positive-integer)
-            (lambda (n)
-              (lengthed-list-gen type n))))
+            (lambda (n) (lengthed-list-gen type n))))
+(set-generator! 'nonempty-list nonempty-list-gen)
 
 
 (define (gen:subsequence ls)
   (gen:map (lambda (bool-lst)
              (map cdr (filter car (map cons bool-lst ls))))
            (lengthed-list-gen 'boolean (length ls))))
+(set-generator! 'subsequence gen:subsequence)
 
 (define (gen:permutation ls)
   (if (null? ls)
-      (gen:pure '())
-      (gen:then (arbitrary `(range 0 ,(length ls)))
+      (gen:pure (list))
+      (gen:then (arbitrary `(linear ,(length ls)))
                 (lambda (idx)
                   (gen:map (lambda (sublist)
                              (cons (list-ref ls idx) sublist))
@@ -102,9 +101,7 @@
                                                        (drop lst (+ idx 1))))
                                              ls
                                              idx)))))))
-
-
-;; TODO
+(set-generator! 'permutation gen:permutation)
 
 
 ;; CODE BELOW IS PROBABLY ALL WRONG

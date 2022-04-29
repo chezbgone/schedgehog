@@ -89,16 +89,24 @@ generator a : {
     (hash-table-ref generator-store type
                     (lambda () (error "no generator found for" type))))
    ((list? type)
+    (apply (arbitrary (car type))
+           (cdr type))
+    )
+   (else (error "arbitrary instance not found"))
+   #|
+   ((list? type)
     (case (car type)
       ((linear range range-from)
        (apply (hash-table-ref generator-store (car type))
               (cdr type)))
       ((list) (list-gen (cadr type)))
-      ((pair) (gen-pair (arbitrary (cadr type))
+      ((pair) (gen:pair (arbitrary (cadr type))
                         (arbitrary (caddr type))))
       (else (begin (display type)
                    (display " not found")))
-      ))))
+      ))
+   |#
+   ))
 
 
 ;;; generator utilities
@@ -151,53 +159,3 @@ generator a : {
        (lazy-tree:bind tree-a tree-cont)))))
 
 (define gen:then gen:bind)
-
-
-;;; generator combinators
-
-;; generator -> generator -> generator
-(define (gen-pair genA genB)
-  (define ((cons-curried a) b) (cons a b))
-  (gen:app (gen:map cons-curried genA) genB))
-
-;; list generator -> generator list
-(define (gen:list . gens)
-  (cond
-   ((null? gens) (gen:pure (list)))
-   (else         (gen-pair (car gens) (gen:sequence (cdr gens))))))
-
-;; list generator -> generator list
-(define (gen:sequence gens)
-  (apply gen:list gens))
-
-;; there is probably a better way of doing this
-(define (gen:apply f . gens)
-  (gen:map (lambda (seq) (apply f seq)) (gen:sequence gens)))
-
-(define (gen:one-of ls)
-  (gen:map (lambda (i) (list-ref ls i))
-           (arbitrary `(linear ,(length ls)))))
-
-(define (gen:one-of_ ls)
-  (remove-shrinking (gen:one-of ls)))
-
-;; list generators -> generator
-(define (gen:select-from ls)
-  (gen:then (arbitrary `(linear ,(length ls)))
-            (lambda (idx)
-              (list-ref ls idx))))
-
-;; list (number, a) -> generator a
-(define (gen:with-frequencies ls)
-  (define (create-lst-with-freqs freqs elements)
-    (if (> (length freqs) 0)
-        (if (= (car freqs) 0)
-            (create-lst-with-freqs (cdr freqs) (cdr elements))
-            (cons (car elements) (create-lst-with-freqs (cons (- (car freqs) 1)
-                                                              (cdr freqs))
-                                                        elements)))
-        '()))
-  (let* ((freq-lst (map car ls))
-         (gen-lst (map cdr ls))
-         (list-elements-weighted (create-lst-with-freqs freq-lst gen-lst)))
-    (gen:select-from list-elements-weighted)))
