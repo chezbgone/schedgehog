@@ -5,7 +5,7 @@
 
 % standard
 \usepackage{mathtools, amssymb, amsthm}
-\usepackage[shortlabels, inline]{enumitem}
+\usepackage{hyperref}
 
 % layout
 \usepackage[margin=1.5cm, includefoot]{geometry}
@@ -14,8 +14,12 @@
 \RenewDocumentCommand{\sectionlinesformat}{m m m m}{\makebox[0pt][r]{#3}#4}
 
 % typography
-\usepackage{libertine, microtype}
+\usepackage[T1]{fontenc}
+\usepackage{libertine}
+\usepackage[scaled=0.83]{beramono}
+\usepackage{microtype}
 \usepackage[shortlabels, inline]{enumitem}
+\setlist{noitemsep, topsep=0.4em, listparindent=\parindent}
 
 % smaller title style
 \makeatletter \patchcmd{\@maketitle}{\huge}{\large}{}{} \makeatother
@@ -132,42 +136,43 @@ must return a lazy tree of values. To create a generator without dealing with
 lazy tree internals, we would need to call library functions.
 
 Suppose one had a generating function \verb|gen|. The simplest way to make a
-generator would be to call \verb|(no-shrink gen)|, which returns a generator
-object that does not have a shrinker.
+generator would be to call \verb|(make-generator-without-shrinking gen)|,
+which returns a generator object that does not have a shrinker.
 
-\begin{verb}
-(define gen-1 (no-shrink (lambda (size seed) 1)))
+\begin{verbatim}
+(define gen-1 (make-generator-without-shrinking (lambda (size seed) 1)))
 (print-lazy-tree (generate gen-1))
-\end{verb}
+\end{verbatim}
 
-We can reigster a generator with a type by calling \verb|set-generator!|. This
+We can register a generator with a type by calling \verb|set-generator!|. This
 allows it to be called with \verb|arbitrary|, a generic function.
 
-\begin{verb}
+\begin{verbatim}
 (set-generator! 'type-1 gen-1)
 (print-lazy-tree (generate (arbitrary 'type-1)))
 (check (forall (x type-1) (= x 1)))
-\end{verb}
+\end{verbatim}
 
-To replace the shrink function of a generator with a specified shrink function
-\verb|shrink|, we call \verb|replace-shrink-tree shrink| with the generator.
+To replace the shrink function of a generator \verb|gen| with a specified shrink
+function \verb|shrink|, we call \verb|(replace-shrinking shrink gen)|.
 
-\begin{verb}
+\begin{verbatim}
 (define (shrink-fn value) (case value ((1) (list 0)) ((0) (list))))
-(define gen-2 ((replace-shrink-tree shrink-fn) gen-1))
+(define gen-2 ((replace-shrinking shrink-fn) gen-1))
 (print-lazy-tree (generate gen-2))
-\end{verb}
+\end{verbatim}
 
 We can also create parametrized generators. The function \verb|arbitrary|, when
 given a list of symbols, will instead search for a handler for the first symbol,
 to be called on the list of the remaining symbols as arguments, expecting a
 generator returned.
 
-\begin{verb}
-(define (gen-constant val) (no-shrink (lambda (size seed) val)))
+\begin{verbatim}
+(define (gen-constant val)
+  (make-generator-without-shrinking (lambda (size seed) val)))
 (set-generator! 'type-constant (lambda (val) (gen-constant val)))
-(print-lazy-tree (generate (arbitrary ('type-constant 1))))
-\end{verb}
+(print-lazy-tree (generate (arbitrary '(type-constant 1))))
+\end{verbatim}
 
 Note that the type of generators forms a monad. The monad methods are in the
 library as \verb|gen:pure| and \verb|gen:bind|; we also provide convenience
@@ -185,6 +190,7 @@ functions \verb|gen:map|, \verb|gen:apply|, \verb|gen:list|, etc.
 \section{Extensions}
 
 % idk
+% coarbitrary (function types)
 
 \begin{thebibliography}{99}
 

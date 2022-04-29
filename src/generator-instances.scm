@@ -35,23 +35,23 @@
 (define (shrink-integer n)
   (delete-duplicates
    (cond
-    ((> n 0) (list (- n 1) (quotient n 2) 0))
-    ((< n 0) (list (+ n 1) (quotient n 2) 0))
+    ((> n 0) (list 0 (quotient n 2) (- n 1)))
+    ((< n 0) (list 0 (quotient n 2) (+ n 1)))
     (else (list)))))
 
 (define integer-gen
-  ((replace-shrink-tree shrink-integer)
+  (replace-shrinking shrink-integer
    (sized (lambda (size) (arbitrary `(range ,(- 1 size) ,size))))))
 (set-generator! 'integer integer-gen)
 
 (define positive-integer-gen
-  ((replace-shrink-tree shrink-integer)
+  (replace-shrinking shrink-integer
    (sized (lambda (size) (arbitrary `(range 1 ,size))))))
 (set-generator! 'positive-integer positive-integer-gen)
 
 
 (define nonnegative-integer-gen
-  ((replace-shrink-tree shrink-integer)
+  (replace-shrinking shrink-integer
    (sized (lambda (size) (arbitrary `(linear ,size))))))
 (set-generator! 'nonnegative-integer nonnegative-integer-gen)
 

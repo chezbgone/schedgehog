@@ -1,18 +1,20 @@
-;; A generator represents a source of values for randomly checking a property.
-;;
-;; Intuitively, it can be thought of as a structure containing two components:
-;; - A generating function `size -> seed -> value`
-;; - A shrinking function `value -> list value`
-;; One desired property is to be able to map a function over a generator object,
-;; which requires covariance. To make this structure covariant,
-;; we can recursively apply the shrinking function to the value obtained from
-;; the generating function. This constructs a tree of ways to shrink the data
-;; (which we lazily generate to conserve memory).
-;;
-;; As a result, a generator is a function of the form
-;; generator a : {
-;;   gen : size -> seed -> lazy-tree a
-;; }
+#|
+A generator represents a source of values for randomly checking a property.
+
+Intuitively, it can be thought of as a structure containing two components:
+- A generating function `size -> seed -> value`
+- A shrinking function `value -> list value`
+One desired property is to be able to map a function over a generator object,
+which requires covariance. To make this structure covariant,
+we can recursively apply the shrinking function to the value obtained from
+the generating function. This constructs a tree of ways to shrink the data
+(which we lazily generate to conserve memory).
+
+As a result, a generator is a function of the form
+generator a : {
+  gen : size -> seed -> lazy-tree a
+}
+|#
 (define-record-type generator
   (%make-generator gen)
   generator?
@@ -24,6 +26,57 @@
   (let ((sz (if (default-object? size) default-size size))
         (sd (if (default-object? seed) (make-random-state #t) seed)))
     ((get-gen generator) sz sd)))
+
+
+;;; constructing shrink trees
+
+;; shrink-function -> value -> lazy-tree
+(define (shrinkable-via shrink-fn value)
+  ;; (value -> [value]) -> value -> lazy-tree value
+  (define ((make-shrink-tree shrink-fn) value)
+    (make-lazy-tree
+     value
+     (map (lambda (shrunk-value)
+            (lambda () ((make-shrink-tree shrink-fn) shrunk-value)))
+          (shrink-fn value))))
+  ((make-shrink-tree shrink-fn) value))
+
+;; value -> lazy-tree
+(define (unshrinkable value)
+  (lazy-tree-node value))
+
+
+;;; creating generators
+
+;; (size -> seed -> value) -> (value -> [value]) -> generator
+;; (     gen function    ) -> (shrink function ) -> generator
+(define (make-generator gen shrink-fn)
+  (%make-generator
+   (lambda (size seed)
+     (shrinkable-via shrink-fn (gen size seed)))))
+
+;; (size -> seed -> value) -> generator
+;; (     gen function    ) -> generator
+(define (make-generator-without-shrinking gen)
+  (%make-generator
+   (lambda (size seed)
+     (unshrinkable (gen size seed)))))
+
+;; generator -> generator
+(define (remove-shrinking generator)
+  (%make-generator
+   (lambda (size seed)
+     (unshrinkable (lazy-tree-value (generate generator size seed))))))
+
+;; shrink-function -> generator -> generator
+(define (replace-shrinking shrink-fn generator)
+  (%make-generator
+   (lambda (size seed)
+     (shrinkable-via shrink-fn
+                     (lazy-tree-value (generate generator size seed))))))
+
+
+;;; `arbitrary` generic function
 
 (define generator-store (make-hash-table))
 (define (set-generator! type gen)
@@ -47,49 +100,22 @@
                    (display " not found")))
       ))))
 
-;; (val -> [val]) -> val -> lazy-tree val
-(define ((make-shrink-tree shrink-fn) value)
-  (make-lazy-tree
-   value
-   (map (lambda (shrunk-value)
-          (lambda () ((make-shrink-tree shrink-fn) shrunk-value)))
-        (shrink-fn value))))
-
-;; shrink-function -> value -> lazy-tree
-(define (shrinkable-via shrink-fn value)
-  ((make-shrink-tree shrink-fn) value))
-
-;; value -> lazy-tree
-(define (unshrinkable value)
-  (lazy-tree-node value))
-
 
 ;;; generator utilities
 
-;; shrink-function -> generator -> generator
-(define ((replace-shrink-tree shrink-fn) generator)
-  (%make-generator
-   (lambda (size seed)
-     (shrinkable-via shrink-fn
-                     (lazy-tree-value (generate generator size seed))))))
-
+;; introduce size parameter
 ;; (size -> generator a) -> (generator a)
 (define (sized s-gen)
   (%make-generator
    (lambda (size seed)
      (generate (s-gen size) size seed))))
 
-;; sizing
+;; fixed size
+;; size -> (generator a) -> (generator a)
 (define (resize size generator)
   (%make-generator
    (lambda (old-size seed)
      (generate generator size seed))))
-
-;; generating-function -> generator
-(define (no-shrink generator)
-  (%make-generator
-   (lambda (size seed)
-     (unshrinkable (lazy-tree-value (generate generator size seed))))))
 
 ;; (a -> b) -> (generator a -> generator b)
 (define (gen:map f generator)
@@ -126,7 +152,9 @@
 
 (define gen:then gen:bind)
 
+
 ;;; generator combinators
+
 ;; generator -> generator -> generator
 (define (gen-pair genA genB)
   (define ((cons-curried a) b) (cons a b))
@@ -151,7 +179,7 @@
            (arbitrary `(linear ,(length ls)))))
 
 (define (gen:one-of_ ls)
-  (no-shrink (gen:one-of ls)))
+  (remove-shrinking (gen:one-of ls)))
 
 ;; list generators -> generator
 (define (gen:select-from ls)
