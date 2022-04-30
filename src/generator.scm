@@ -118,12 +118,11 @@ generator a : {
 
 ;; applicative pure
 ;; value -> generator
-(define (constant-gen val)
+(define (gen:pure val)
   (%make-generator
    (lambda (size seed)
      (unshrinkable val))))
-
-(define gen:pure constant-gen)
+(define constant-gen gen:pure)
 
 ;; generator (a -> b) -> generator a -> generator b
 (define (gen:app gen-f gen-a)

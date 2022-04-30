@@ -67,16 +67,8 @@ Test data is generated based on this typing information. These are checked
 against the predicates, and in the case that a failing counterexample is found,
 the counterexample is simplified via a build-in extensible rule-based system.
 
-\iffalse
-Schedgehog's generators
-are generic functions associated with a type that serve two main purposes:
-\begin{itemize}
-  \item \emph{value generation}, which is the generation of new value of
-        the type given size and seed parameters, and
-  \item \emph{test shrinking}, which allows automatically simplifying failing
-        counterexamples, via a built-in user-extensible rule-based system.
-\end{itemize}
-\fi
+The code is currently available at
+\url{https://github.com/chezbgone/schedgehog}.
 
 \section{Basic usage}
 
@@ -205,9 +197,6 @@ generator returned.
 (print-lazy-tree (generate (arbitrary '(type-constant 1))))
 \end{verbatim}
 
-Note that the type of generators forms a monad. The monad methods are in the
-library as \verb|gen:pure| and \verb|gen:bind|; we also provide convenience
-functions \verb|gen:map|, \verb|gen:apply|, \verb|gen:collect|, etc.
 
 \section{Trees}\label{sec:trees}
 \subsection{Rationale}
@@ -266,9 +255,126 @@ As a result, we can make the list of children lazy,
 since generating the shrunk values is unnecessary until needed in shrinking.
 
 
-% \section{Combinators}
+\section{Generator Combinators}
 
-% talk about combinators
+The structure of our generators as described in \ref{sec:trees} allows us to
+create new generators out of existing generators very easily.
+More specifically, we built a monadic combinator library for generators.
+This happens to be extremely useful because the shrinking function is
+automatically derived from the existing shrinking functions.
+In this section, we will explain what combinators are available.
+
+If we have a generator for a type \verb|T|, and a function \verb|T -> S|,
+then we can use \verb|gen:map| to obtain a generator for \verb|S|.
+\begin{verbatim}
+(define g (gen:map (lambda (n) (list n n)) (arbitrary 'integer)))
+(print-lazy-tree (generate g))
+; +- (-2 -2)
+;    |- (0 0)
+;    +- (-1 -1)
+;       +- (0 0)
+\end{verbatim}
+Note that shrinked values are also mapped, so the invariant is preserved.
+
+We can generalize \verb|gen:map| to work with multi-parameter arguments:
+\begin{verbatim}
+(define g
+  (gen:apply (lambda (n val) (make-list n val))
+             (arbitrary 'nonnegative-integer)
+             (arbitrary 'boolean)))
+(print-lazy-tree (generate g))
+; +- (#t #t)
+;    |- ()
+;    |- (#t)
+;    |  |- ()
+;    |  +- (#f)
+;    |     +- ()
+;    +- (#f #f)
+;       |- ()
+;       +- (#f)
+;          +- ()
+\end{verbatim}
+Note that the shrinking happens in all of the arguments provided in the
+generators provided to the \verb|gen:apply| combinator.
+
+If we have a value, we can create a generator that always returns
+that value with \verb|gen:pure| or \verb|constant-gen|:
+\begin{verbatim}
+(print-lazy-tree (generate (constant-gen (list 'a 3 #t))))
+; +- (a 3 #t)
+\end{verbatim}
+
+If there is a list of generators, we can collect them into a generator of a list
+via \verb|gen:sequence|:
+\begin{verbatim}
+(define g
+  (gen:sequence (list (arbitrary 'integer)
+                      (arbitrary '(range 5 7))
+                      (arbitrary 'boolean))))
+(print-lazy-tree (generate g))
++- (2 5 #t)
+   |- (0 5 #t)
+   |  +- (0 5 #f)
+   |- (1 5 #t)
+   |  |- (0 5 #t)
+   |  |  +- (0 5 #f)
+   |  +- (1 5 #f)
+   |     +- (0 5 #f)
+   +- (2 5 #f)
+      |- (0 5 #f)
+      +- (1 5 #f)
+         +- (0 5 #f)
+\end{verbatim}
+
+There is a similar function \verb|gen:collect| that takes the generators
+as arguments
+\begin{verbatim}
+(gen:collect (arbitrary 'integer)
+             (arbitrary '(range 5 10))
+             (arbitrary 'boolean))
+\end{verbatim}
+
+We also have the monadic bind combinator \verb|gen:bind|,
+also called \verb|gen:then|:
+\begin{verbatim}
+(define g
+  (gen:then (arbitrary '(range 0 5))
+            (lambda (n) (gen:sequence (make-list n (arbitrary 'boolean))))))
+(print-lazy-tree (generate g))
++- (#f #t #f)
+   |- (#t #t)
+   |  |- (#f)
+   |  |  +- ()
+   |  |- (#f #t)
+   |  |  +- (#f #f)
+   |  +- (#t #f)
+   |     +- (#f #f)
+   +- (#f #f #f)
+\end{verbatim}
+
+Using these combinators, we have written a large collection of
+generators for everyday structures.
+Schedgehog currently provides generators and arbitrary instances for
+\begin{itemize}
+  \item \verb|integer|,
+  \item \verb|positive-integer|,
+  \item \verb|nonnegative-integer|,
+  \item \verb|floats|,
+  \item \verb|linear| (integers from \(0\) through \(n\)),
+  \item \verb|range| (integers from \(m\) through \(n\)),
+  \item \verb|range-from| (integers from \(m\) through \(n\),
+                           shrinking towards some origin \(k\)),
+  \item \verb|pair|,
+  \item \verb|list|,
+  \item \verb|nonempty-list|,
+  \item \verb|lengthed-list|,
+  \item \verb|subsequence|, and
+  \item \verb|permutation|.
+\end{itemize}
+However, this is just the beginning.
+With the combinators provided, user may write their own
+generator for custom types of data and structures.
+
 
 % \section{Extensions}
 
