@@ -161,7 +161,7 @@ To create a generator without dealing with lazy tree internals,
 we can call library functions that abstract away these details.
 
 % TODO: figure out the hbox here
-Suppose one had a generating function \verb|gen|. The simplest way to make a
+Suppose one has a generating function \verb|gen|. The simplest way to make a
 generator would be to call \verb|(make-generator-without-shrinking gen)|,
 which returns a generator object using the generating function that does not
 have a shrinker.
@@ -229,7 +229,7 @@ Many generators represent types with some invariant,
 and we want both \verb|gen| and \verb|shrink| to satisfy these invariants.
 For instance if we are generating integers between 10 and 20,
 \verb|gen| must only generate numbers in this range,
-and \verb|shrink| must not return a number in this range.
+and \verb|shrink| must also return a number in this range.
 Both functions trying to satisfy these invariants
 often leads to duplicate code, which is tedious to write and
 makes it more likely for discrepancies to arise.
