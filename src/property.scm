@@ -9,10 +9,10 @@
 
 (define-syntax forall
   (syntax-rules ()
-    ((_ ((var type) ...) body)
+    ((_ ((var type) ...) body ...)
      (make-property '(var ...)
                     '(type ...)
-                    (lambda (var ...) body)))))
+                    (lambda (var ...) body ...)))))
 
 #|
 ;; example usage:
