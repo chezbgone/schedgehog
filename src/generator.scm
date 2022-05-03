@@ -20,13 +20,19 @@ generator a : {
   generator?
   (gen get-gen))
 
-;; generator -> (optional size) -> (optional seed) -> value
+;; generator -> (optional size) -> (optional seed) -> lazy-tree
 (define default-size 20)
 (define (generate generator #!optional size seed)
   (let ((sz (if (default-object? size) default-size size))
         (sd (if (default-object? seed) (make-random-state #t) seed)))
     ((get-gen generator) sz sd)))
 
+;; generate-an -> (optional size) -> (optional seed) -> value
+(define (generate-an generator #!optional size seed)
+  (lazy-tree-value (generate generator size seed)))
+
+;; for the sake of English idiosyncrasies
+(define generate-a generate-an)
 
 ;;; constructing shrink trees
 
