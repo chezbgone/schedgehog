@@ -20,6 +20,15 @@
                     '(type ...)
                     (lambda (var ...) (try body ...))))))
 
+(define-syntax when
+  (syntax-rules ()
+    ((_ consequent) consequent)
+    ((_ antecedent consequent ...)
+     (let ((ant (ignore-errors (lambda () antecedent))))
+       (if (or (condition? ant) (not ant))
+           'condition-not-satisfied
+           (when consequent ...))))))
+
 #|
 ;; example usage:
 (define prop:addition-commutativity
