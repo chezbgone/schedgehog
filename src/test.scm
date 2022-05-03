@@ -48,34 +48,49 @@
          (arguments-tree (generate arguments-generator size seed))
          (arguments (lazy-tree-value arguments-tree))
          (result (apply assertion arguments)))
-    (if result #t (shrink-failure config 0 assertion arguments-tree))))
+    (cond
+      ((eq? result 'condition-not-satisfied) result)
+      ((failure? result) (shrink-failure config 0 assertion arguments-tree))
+      (else #t))))
 
 ;; Runs multiple tests.
 ;; config -> number -> random-state -> property -> #t | failure
 (define (check-with-config config size seed property)
   (define tries 0)
+  (define discards 0)
   (define (loop)
     (set! tries (+ tries 1))
     (if (>= tries (config-test-limit config))
       (begin ; we succeeded
+        (if (> discards 0)
+          (begin
+            (display "discarded ")
+            (display discards)
+            (display " tests")
+            (newline)))
         (display "ok ")
         (display tries)
         (display " tests")
         (newline)
         #t)
       (let ((result (check-once config size seed property)))
-        (if (failure? result)
-          (begin ; we failed
-            (display "failed after ")
-            (display tries)
-            (display " tests, ")
-            (display (failure-shrinks result))
-            (display " shrinks:")
-            (newline)
-            (display (zip (property-vars property) (failure-arguments result)))
-            (newline)
-            result)
-          (loop)))))
+        (cond
+          ((eq? result 'condition-not-satisfied)
+           (begin
+             (set! discards (+ discards 1))
+             (loop)))
+          ((failure? result)
+            (begin ; we failed
+              (display "failed after ")
+              (display tries)
+              (display " tests, ")
+              (display (failure-shrinks result))
+              (display " shrinks:")
+              (newline)
+              (display (zip (property-vars property) (failure-arguments result)))
+              (newline)
+              result))
+          (else (loop))))))
   (loop))
 
 (define default-config (make-config 1000 100))
