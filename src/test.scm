@@ -95,14 +95,15 @@
 
 (define default-config (make-config 1000 100))
 
-;; Checks a property with the default everything.
-(define (check property)
-  (define seed (make-random-state #t))
-  (display "seed:")
-  (newline)
-  (display (export-random-state seed))
-  (newline)
-  (check-with-config default-config default-size seed property))
+;; Checks a property, optionally specifying size and seed
+(define (check property #!optional size seed)
+  (let ((sz (if (default-object? size) default-size size))
+        (sd (if (default-object? seed) (make-random-state #t) seed)))
+    (display "seed: ")
+    (display (export-random-state seed))
+    (newline)
+    (check-with-config default-config sz sd property)))
+
 
 #|
 (define prop:addition-commutativity
