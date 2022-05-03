@@ -7,12 +7,18 @@
   (types property-types)
   (assertion property-assertion))
 
+(define-syntax try
+  (syntax-rules ()
+    ((_ f)
+     (let ((result (ignore-errors (lambda () f))))
+       (if (condition? result) #f result)))))
+
 (define-syntax forall
   (syntax-rules ()
     ((_ ((var type) ...) body ...)
      (make-property '(var ...)
                     '(type ...)
-                    (lambda (var ...) body ...)))))
+                    (lambda (var ...) (try body ...))))))
 
 #|
 ;; example usage:
