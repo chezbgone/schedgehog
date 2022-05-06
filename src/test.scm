@@ -50,7 +50,7 @@
          (result (apply assertion arguments)))
     (cond
       ((eq? result 'condition-not-satisfied) result)
-      ((failure? result) (shrink-failure config 0 assertion arguments-tree))
+      ((not result) (shrink-failure config 0 assertion arguments-tree))
       (else #t))))
 
 ;; Runs multiple tests.
@@ -100,7 +100,7 @@
   (let ((sz (if (default-object? size) default-size size))
         (sd (if (default-object? seed) (make-random-state #t) seed)))
     (display "seed: ")
-    (display (export-random-state seed))
+    (display (export-random-state sd))
     (newline)
     (check-with-config default-config sz sd property)))
 
