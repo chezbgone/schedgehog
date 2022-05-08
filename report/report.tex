@@ -137,16 +137,15 @@ size (which determines the size of generated inputs), and seed.
 The file \verb|examples/generator.scm| contains extensive examples of the
 library of built-in generators.
 
-% TODO: maybe better syntax for function parameters
 A generator represents a source of values for randomly checking a property,
 along with the way in which values in the type shrink.
 Intuitively, it can be thought of as a structure containing two components:
 \begin{itemize}
-\item A generating function \verb|(size -> seed -> value)|
-\item A shrinking function \verb|(value -> list value)|
+\item A generating function \verb|(size seed) -> value|
+\item A shrinking function \verb|(value) -> [list value]|
 \end{itemize}
 Internally, a generator is actually a wrapper around just one function
-\verb|(size -> seed -> lazy-tree value)|, a function returning a lazy tree of
+\verb|(size seed) -> [lazy-tree value]|, a function returning a lazy tree of
 values. This design decision will be explained in
 \cref{sec:trees}.
 To create a generator without dealing with lazy tree internals,
@@ -205,13 +204,12 @@ denoted as a \verb|(generator T)|,
 can be thought of as a pair of functions,
 \begin{itemize}
   \item \verb|gen| for value generation
-        with type \verb|(size -> seed -> T)|, and
-  \item \verb|shrink| for shrinking with type \verb|(T -> list T)|.
+        with type \verb|(size seed) -> T|, and
+  \item \verb|shrink| for shrinking with type \verb|(T) -> [list T]|.
 \end{itemize}
 However, representing a generator as a collection of these two functions,
-referred to as \emph{manual shrinking}, has some downsides.
-% TODO: cite https://www.tweag.io/blog/2021-07-21-qcheck2-integrated-shrinking/
-%       and https://www.well-typed.com/blog/2019/05/integrated-shrinking/
+referred to as \emph{manual shrinking}, has some downsides
+\cite{integrated} \cite{integrated2}.
 
 One desired property of a generator is \emph{invariant preservation}.
 Many generators represent types with some invariant,
@@ -225,7 +223,7 @@ makes it more likely for discrepancies to arise.
 
 Another desired property of a generator is
 ease of composition with other functions.
-If we have a \verb|(generator T)| and a function \(f\) of type \verb|(T -> S)|,
+If we have a \verb|(generator T)| and a function \(f\) of type \verb|(T) -> S|,
 it seems like we should be able to obtain a \verb|(generator S)| just by
 mapping the function over the values that \verb|gen| gives.
 This is indeed true, but we cannot do the same thing for \verb|shrink|,
@@ -239,7 +237,7 @@ To do so, whenever we generate a value,
 we also generate the values that it shrinks to,
 and then recursively generate the values those new values shrink to, and so on.
 This results in a generator structure that is a wrapper around a single
-function \verb|(size -> seed -> (tree T))|.
+function \verb|(size seed) -> [tree T]|.
 
 The type \verb|(tree T)| is a record structure containing
   a value of type \verb|T| and
@@ -386,6 +384,14 @@ generator for custom types of data and structures.
 \bibitem{quickcheck}
 Claessen, K., \& Hughes, J. (2011). QuickCheck: a lightweight tool for random
 testing of Haskell programs. \textit{ACM SigPlan Notices}, 46(4), 53-64.
+
+\bibitem{integrated}
+Debon, J. (2021). Integrated shrinking in QCheck. Retrieved from
+\url{https://www.tweag.io/blog/2021-07-21-qcheck2-integrated-shrinking/}.
+
+\bibitem{integrated2}
+de Vries, E. (2019). Integrated versus Manual Shrinking. Retrieved from
+\url{https://www.well-typed.com/blog/2019/05/integrated-shrinking/}.
 
 \bibitem{hedgehog}
 Hedgehog QA. (2019). Hedgehog will eat all your bugs. Retrieved from
