@@ -99,7 +99,7 @@
 (define (check property #!optional size seed)
   (let ((sz (if (default-object? size) default-size size))
         (sd (if (default-object? seed) (make-random-state #t) seed)))
-    (display "seed: ")
+    (display "; seed: ")
     (display (export-random-state sd))
     (newline)
     (check-with-config default-config sz sd property)))

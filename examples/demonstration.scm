@@ -57,3 +57,54 @@
 
 
 
+
+
+
+
+
+
+
+
+
+; =======================
+(load "schedgehog.scm")
+
+(define prop:reverse-append
+  (forall ((xs (list integer))
+           (ys (list integer)))
+    (equal? (reverse (append xs ys))
+            (append (reverse ys)
+                    (reverse xs)))))
+
+(define (reverse xs)
+  (if (null? xs)
+      (list)
+      (append (reverse (cdr xs))
+              (list (car xs)))))
+
+(check prop:reverse-append)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(define (reverse xs)
+  (case (length xs)
+    ((0) (list))
+    ((1) (car xs))
+    (else (cons (car xs)
+                (reverse (cdr xs))))))
